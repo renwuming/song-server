@@ -80,8 +80,6 @@ export async function getAccessToken(forceUpdate = false) {
 }
 
 export function verifySignature(req) {
-  console.log(req);
-
   const PUSH_SECRET = configService.get<string>('PUSH_SECRET');
   const signature = req.headers['x-signature'];
   if (!signature || !PUSH_SECRET) {
@@ -106,18 +104,12 @@ export function verifySignature(req) {
     .map((key) => `${key}=${headersToSign[key]}`)
     .join('&');
 
-  console.log(headerString);
-
   // 4. 从 request 中获取原始 body 字符串
   // 优先使用 req.rawBody（通过 express.json 的 verify 选项保存的 Buffer）
   const bodyString = (req as any).rawBody?.toString('utf-8');
 
-  console.log(bodyString);
-
   // 5. 直接拼接（无需连接符）headerString + bodyString + secret
   const stringToSign = headerString + bodyString + PUSH_SECRET;
-
-  console.log(stringToSign);
 
   // 6. 使用 UTF-8 编码，进行 MD5 计算（16 bytes）
   const md5Hash = crypto
@@ -125,12 +117,8 @@ export function verifySignature(req) {
     .update(stringToSign, 'utf-8')
     .digest();
 
-  console.log(md5Hash);
-
   // 7. 对 MD5 计算结果进行 base64 编码
   const calculatedSignature = md5Hash.toString('base64');
-
-  console.log(calculatedSignature, signature);
 
   // 8. 比较计算出的 signature 和请求头中的 signature
   return calculatedSignature === signature;
