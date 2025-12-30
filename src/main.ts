@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as express from 'express';
+import { AllExceptionsFilter } from './allException.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +15,9 @@ async function bootstrap() {
       },
     }),
   );
+
+  // 过滤所有报错
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   app.enableCors();
 

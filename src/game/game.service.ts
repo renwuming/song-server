@@ -91,6 +91,8 @@ export class GameService {
   }
 
   async handlePushData(req, body) {
+    console.log(req);
+
     const valid = verifySignature(req);
     if (!valid) {
       throw new BadRequestException('invalid signature');
@@ -98,6 +100,7 @@ export class GameService {
 
     // todo: 处理body
     console.log(body);
+    // 礼物 test字段为true的情况
 
     return;
   }

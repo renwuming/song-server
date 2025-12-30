@@ -8,6 +8,7 @@ const configService = new ConfigService();
 // node
 export const isStaging = process.env.NODE_ENV === 'staging';
 export const isDev = process.env.NODE_ENV === 'dev';
+export const isProduction = !isStaging && !isDev;
 
 let REDIS_CLIENT;
 export function getRedis(): Redis {
