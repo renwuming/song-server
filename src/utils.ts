@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import Client from '@open-dy/open_api_sdk';
 import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
+import * as crypto from 'crypto';
 const configService = new ConfigService();
 
 // node
@@ -76,4 +77,61 @@ export async function getAccessToken(forceUpdate = false) {
   } else {
     return token;
   }
+}
+
+export function verifySignature(req) {
+  console.log(req);
+
+  const PUSH_SECRET = configService.get<string>('PUSH_SECRET');
+  const signature = req.headers['x-signature'];
+  if (!signature || !PUSH_SECRET) {
+    return false;
+  }
+
+  // 1. 获取列表中的header
+  const headerKeys = ['x-timestamp', 'x-nonce-str', 'x-roomid', 'x-msg-type'];
+  const headersToSign: Record<string, string> = {};
+  for (const [key, value] of Object.entries(req.headers)) {
+    const lowerKey = key.toLowerCase();
+    if (headerKeys.includes(lowerKey) && value) {
+      headersToSign[key] = Array.isArray(value) ? value[0] : value;
+    }
+  }
+
+  // 2. 按 key 字典序从小到大排序
+  const sortedKeys = Object.keys(headersToSign).sort();
+
+  // 3. 将 key-value 按顺序连接起来，格式：key1=value1&key2=value2
+  const headerString = sortedKeys
+    .map((key) => `${key}=${headersToSign[key]}`)
+    .join('&');
+
+  console.log(headerString);
+
+  // 4. 从 request 中获取原始 body 字符串
+  // 优先使用 req.rawBody（通过 express.json 的 verify 选项保存的 Buffer）
+  const bodyString = (req as any).rawBody?.toString('utf-8');
+
+  console.log(bodyString);
+
+  // 5. 直接拼接（无需连接符）headerString + bodyString + secret
+  const stringToSign = headerString + bodyString + PUSH_SECRET;
+
+  console.log(stringToSign);
+
+  // 6. 使用 UTF-8 编码，进行 MD5 计算（16 bytes）
+  const md5Hash = crypto
+    .createHash('md5')
+    .update(stringToSign, 'utf-8')
+    .digest();
+
+  console.log(md5Hash);
+
+  // 7. 对 MD5 计算结果进行 base64 编码
+  const calculatedSignature = md5Hash.toString('base64');
+
+  console.log(calculatedSignature, signature);
+
+  // 8. 比较计算出的 signature 和请求头中的 signature
+  return calculatedSignature === signature;
 }

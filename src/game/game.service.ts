@@ -5,7 +5,7 @@ import {
   TaskStartRequest,
   WebcastmateInfoRequest,
 } from '@open-dy/open_api_sdk';
-import { getAccessToken, getClient } from 'src/utils';
+import { getAccessToken, getClient, verifySignature } from 'src/utils';
 
 @Injectable()
 export class GameService {
@@ -91,8 +91,12 @@ export class GameService {
   }
 
   async handlePushData(req, body) {
-    console.log(req.headers);
     console.log(body);
+
+    const valid = verifySignature(req);
+    if (!valid) {
+      throw new BadRequestException('invalid signature');
+    }
 
     return;
   }
