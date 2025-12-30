@@ -21,6 +21,7 @@ export class AppModule implements NestModule {
     consumer
       .apply(AuthMiddleware)
       .exclude(
+        '/games/push/data',
         // todo: 删除
         '/games/test',
       )
