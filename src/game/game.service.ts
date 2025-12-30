@@ -58,9 +58,10 @@ export class GameService {
       msgType,
       roomid,
     });
+
     // 调用方法发起请求
     const messageRes = await client.taskGet(params);
-    return messageRes?.data?.status;
+    return messageRes?.data?.status; // 1 任务不存在 2 任务未启动 3 任务运行中 4 任务已结束
   }
 
   // 互动 停止任务
@@ -83,9 +84,16 @@ export class GameService {
       },
     );
     const messageRes = await res.json();
-    // todo
+    // todo: 处理错误
     if (messageRes.err_no !== 0) {
       throw new BadRequestException(messageRes.description);
     }
+  }
+
+  async handlePushData(req, body) {
+    console.log(req.headers);
+    console.log(body);
+
+    return;
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Req } from '@nestjs/common';
 import { GameService } from './game.service';
 
 @Controller('games')
@@ -10,9 +10,14 @@ export class GameController {
     return this.gameService.startGame(body);
   }
 
+  @Post('/push/data')
+  async handlePushData(@Body() body, @Req() req) {
+    return this.gameService.handlePushData(req, body);
+  }
+
   // todo: 删除
   @Get('/test')
   async test() {
-    return this.gameService.stopTask('live_comment', 'bwOIqIDZ2F');
+    return this.gameService.handlePushData({}, {});
   }
 }

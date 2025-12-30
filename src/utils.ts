@@ -3,7 +3,10 @@ import Client from '@open-dy/open_api_sdk';
 import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
 const configService = new ConfigService();
-import CredentialClient from '@open-dy/open_api_credential';
+
+// node
+export const isStaging = process.env.NODE_ENV === 'staging';
+export const isDev = process.env.NODE_ENV === 'dev';
 
 let REDIS_CLIENT;
 export function getRedis(): Redis {
@@ -46,17 +49,26 @@ export async function getAccessToken(forceUpdate = false) {
       throw new InternalServerErrorException('APP_ID or APP_SECRET is not set');
     }
     try {
-      const credentialClient = new CredentialClient({
-        clientKey: APP_ID,
-        clientSecret: APP_SECRET,
+      const res = await fetch(
+        'https://developer.toutiao.com/api/apps/v2/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            appid: APP_ID,
+            secret: APP_SECRET,
+            grant_type: 'client_credential',
+          }),
+        },
+      );
+      const { data } = await res.json();
+      const { access_token, expires_in } = data;
+      await cache.set(tokenKey, access_token, () => {
+        cache.expire(tokenKey, expires_in - 300);
       });
-      const { accessToken, expiresIn } =
-        await credentialClient.getClientToken();
-      const expires_in = Math.floor((expiresIn - Date.now()) / 1000) - 300;
-      await cache.set(tokenKey, accessToken, () => {
-        cache.expire(tokenKey, expires_in);
-      });
-      return accessToken;
+      return access_token;
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to get access token');
